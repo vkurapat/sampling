@@ -53,6 +53,51 @@ ggplot(samples |> slice(1:100), aes(y = trial)) +
   theme_minimal()
 ```
 
+```{r}
+#| cache: true
+set.seed(10)
+
+truth <- shaming |> 
+  pull(age) |> 
+  mean(na.rm = TRUE)
+
+biased_samples <- tibble(trial = 1:1000) |>
+  mutate(
+    sample      = map(trial, ~ shaming |> slice_sample(n = 50, weight_by = if_else(age > 40, 3, 1))),
+    sample_mean = map_dbl(sample, ~ mean(.x$age, na.rm = TRUE)),
+    sample_se   = map_dbl(sample, ~ sd(.x$age, na.rm = TRUE) / sqrt(50)),
+    lower       = sample_mean - 1.96 * sample_se,
+    upper       = sample_mean + 1.96 * sample_se
+  ) |>
+  select(-sample)
+```
+
+```{r}
+biased_samples |> 
+  ggplot(aes(x = sample_mean)) +
+  geom_density(fill = "grey90") +
+  geom_vline(xintercept = truth, color = "red", linetype = "dashed") +
+  geom_vline(xintercept = mean(biased_samples$sample_mean), color = "black", linetype = "solid") +
+  labs(
+    title = "Density of Biased Sample Means",
+    subtitle = "The center of the sample means (black line) sits far to the right of the truth (red line)",
+    x = "Sample Mean Age (years)",
+    y = "Density"
+  ) +
+  theme_minimal()
+```
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
